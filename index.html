@@ -113,7 +113,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="row in sortedFilteredData">
+                <tr v-for="(row, index) in uniqueFilteredData" :key="index">
                     <td>{{ row.Year }}</td>
                     <td>{{ row.Month }}</td>
                     <td>{{ row['Consumer Price Index TX'] }}</td>
@@ -145,8 +145,17 @@
                         return rowDate >= startDate && rowDate <= endDate && row['Consumer Price Index TX'] !== null && row['Consumer Price Index TX'] !== "";
                     });
                 },
-                sortedFilteredData() {
-                    return this.filteredData.sort((a, b) => {
+                uniqueFilteredData() {
+                    const uniqueData = [];
+                    const visited = new Set();
+                    for (const row of this.filteredData) {
+                        const key = row.Year + "-" + row.Month;
+                        if (!visited.has(key)) {
+                            uniqueData.push(row);
+                            visited.add(key);
+                        }
+                    }
+                    return uniqueData.sort((a, b) => {
                         const dateA = new Date(a.Year, a.Month - 1);
                         const dateB = new Date(b.Year, b.Month - 1);
                         return dateA - dateB;
@@ -182,10 +191,10 @@
                 this.chart = new Chart(document.getElementById('chart'), {
                     type: 'line',
                     data: {
-                        labels: this.sortedFilteredData.map(row => `${row.Year}-${row.Month}`),
+                        labels: this.uniqueFilteredData.map(row => `${row.Year}-${row.Month}`),
                         datasets: [{
                             label: 'Consumer Price Index TX',
-                            data: this.sortedFilteredData.map(row => row['Consumer Price Index TX']),
+                            data: this.uniqueFilteredData.map(row => row['Consumer Price Index TX']),
                             borderColor: '#007BFF',
                             fill: false
                         }]
@@ -229,8 +238,8 @@
                         this.inflation = null;
                     }
 
-                    this.chart.data.labels = this.sortedFilteredData.map(row => `${row.Year}-${row.Month}`);
-                    this.chart.data.datasets[0].data = this.sortedFilteredData.map(row => row['Consumer Price Index TX']);
+                    this.chart.data.labels = this.uniqueFilteredData.map(row => `${row.Year}-${row.Month}`);
+                    this.chart.data.datasets[0].data = this.uniqueFilteredData.map(row => row['Consumer Price Index TX']);
                     this.chart.update();
                 },
                 getCPI(year, month) {
