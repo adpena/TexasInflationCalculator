@@ -123,7 +123,7 @@
             data: {
                 startYear: 2019,
                 startMonth: null,
-                endYear: 2023,
+                endYear: null,
                 endMonth: null,
                 inflation: '',
                 data: [],
@@ -160,7 +160,7 @@
                     download: true,
                     header: true,
                     complete: (results) => {
-                        this.data = results.data;
+                        this.data = results.data.filter(row => row['Consumer Price Index TX'] !== "" && row['Consumer Price Index TX'] !== null);
                         let years = new Set();
                         let months = new Set();
                         this.data.forEach(row => {
@@ -170,10 +170,10 @@
                         this.years = [...years].sort((a, b) => a - b);
                         this.months = [...months].sort((a, b) => a - b);
 
-                        let latestYearData = this.data.filter(row => row.Year == '2023');
-                        let latestMonthIn2023 = Math.max(...latestYearData.map(row => row.Month));
-                        this.startMonth = latestMonthIn2023;
-                        this.endMonth = latestMonthIn2023;
+                        let latestDataPoint = this.data[this.data.length - 1];
+                        this.endYear = latestDataPoint.Year;
+                        this.endMonth = latestDataPoint.Month;
+                        this.startMonth = latestDataPoint.Month;
                         this.updateChartAndInflation();
                     }
                 });
