@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Texas Inflation Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #F0F0F0;
+            padding: 2em;
+        }
+        #app {
+            background-color: white;
+            border-radius: 15px;
+            padding: 2em;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-weight: 500;
+            margin-bottom: 1em;
+        }
+        form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1em;
+            margin-bottom: 1em;
+        }
+        .form-group {
+            display: grid;
+            gap: 0.5em;
+        }
+        input {
+            padding: 0.5em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 1em;
+            padding: 0.5em 1em;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Texas Inflation Calculator</h1>
+        <p>This calculator uses historical data to compute the inflation rate in Texas between two given periods. The data is sourced from the
+            <a href="https://comptroller.texas.gov/" target="_blank">Texas Comptroller of Public Accounts</a>. For the most recent data, please visit their website.
+        </p>
+        <form @submit.prevent="calculateInflation">
+            <div class="form-group">
+                <label>
+                    Start Year:
+                    <input type="number" v-model="startYear" min="2005" max="2023">
+                </label>
+                <label>
+                    Start Month:
+                    <input type="number" v-model="startMonth" min="1" max="12">
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    End Year:
+                    <input type="number" v-model="endYear" min="2005" max="2023">
+                </label>
+                <label>
+                    End Month:
+                    <input type="number" v-model="endMonth" min="1" max="12">
+                </label>
+            </div>
+            <button type="submit">Calculate</button>
+        </form>
+        <p>Inflation: {{ inflation }}%</p>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                startYear: 2005,
+                startMonth: 1,
+                endYear: 2023,
+                endMonth: 1,
+                inflation: '',
+                data: []
+            },
+            created() {
+                Papa.parse('Key_Economic_Indicators.csv', {
+                    download: true,
+                    header: true,
+                    complete: (results) => {
+                        this.data = results.data;
+                    }
+                });
+            },
+            methods: {
+                calculateInflation() {
+                    const startCPI = this.getCPI(this.startYear, this.startMonth);
+                    const endCPI = this.getCPI(this.endYear, this.endMonth);
+                    this.inflation = ((endCPI / startCPI) - 1) * 100;
+                },
+                getCPI(year, month) {
+                    const row = this.data.find(row => row.Year == year && row.Month == month);
+                    return parseFloat(row['Consumer Price Index TX']);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
