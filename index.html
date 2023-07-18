@@ -78,7 +78,7 @@
                 <label>
                     Start Month:
                     <select v-model="startMonth" @change="updateFormula">
-                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ month }}</option>
+                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ getMonthName(month) }}</option>
                     </select>
                 </label>
             </div>
@@ -92,7 +92,7 @@
                 <label>
                     End Month:
                     <select v-model="endMonth" @change="updateFormula">
-                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ month }}</option>
+                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ getMonthName(month) }}</option>
                     </select>
                 </label>
             </div>
@@ -100,7 +100,7 @@
         <p v-if="inflation !== null">Inflation: {{ inflation }}%</p>
         <p v-else>Inflation: N/A</p>
         <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">
-            Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = {{ ((getCPI(endYear, endMonth) - getCPI(startYear, startMonth)) / getCPI(startYear, startMonth)) * 100 }}
+            Inflation = ((CPI in {{ getYearMonthLabel(endYear, endMonth) }} - CPI in {{ getYearMonthLabel(startYear, startMonth) }}) / CPI in {{ getYearMonthLabel(startYear, startMonth) }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = {{ ((getCPI(endYear, endMonth) - getCPI(startYear, startMonth)) / getCPI(startYear, startMonth)) * 100 }}
         </p>
         <p class="formula" v-else>Inflation calculation requires valid start and end dates.</p>
         <canvas id="chart"></canvas>
@@ -249,6 +249,13 @@
                 },
                 updateFormula() {
                     this.$forceUpdate();
+                },
+                getMonthName(month) {
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    return monthNames[parseInt(month) - 1];
+                },
+                getYearMonthLabel(year, month) {
+                    return `${this.getMonthName(month)} ${year}`;
                 }
             }
         });
