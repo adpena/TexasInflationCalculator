@@ -59,34 +59,6 @@
             font-family: 'Courier New', monospace;
             margin-top: 1em;
         }
-        .input-group {
-            display: flex;
-            align-items: center;
-            padding: 0.5em;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .input-group label {
-            margin-right: 0.5em;
-        }
-        .input-group input[type="number"] {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            border: none;
-            font-size: 1em;
-            padding: 0.2em;
-            width: 100%;
-        }
-        .input-group input[type="number"]::-webkit-inner-spin-button,
-        .input-group input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        .input-group .currency-symbol {
-            font-size: 1em;
-            margin-right: 0.2em;
-        }
     </style>
 </head>
 <body>
@@ -96,17 +68,11 @@
             <a href="https://comptroller.texas.gov/economy/key-indicators/" target="_blank">Texas Comptroller of Public Accounts</a>. May 2023 is the latest month the "Consumer Price Index TX" is available in the Comptroller's Key Economic Indicators. For the most recent data, please visit the agency's website.
         </p>
         <form>
-            <div class="form-group" style="clear: right">
-                <label style="clear: right">
-                    Start Amount:
-                    <div class="input-group">
-                        <span class="currency-symbol">$</span>
-                        <input type="number" v-model="startAmount" min="0" step="0.01" @input="updateBuyingPower">
-                    </div>
-                </label>
-            </div>
-            <br>
             <div class="form-group">
+                <label>
+                    Start Amount:
+                    <input type="number" v-model="startAmount" min="0" step="0.01">
+                </label>
                 <label>
                     Start Year:
                     <select v-model="startYear" @change="updateFormula">
@@ -116,7 +82,7 @@
                 <label>
                     Start Month:
                     <select v-model="startMonth" @change="updateFormula">
-                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ getMonthName(month) }}</option>
+                        <option v-for="month in months" :value="month">{{ getMonthName(month) }}</option>
                     </select>
                 </label>
             </div>
@@ -130,14 +96,14 @@
                 <label>
                     End Month:
                     <select v-model="endMonth" @change="updateFormula">
-                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ getMonthName(month) }}</option>
+                        <option v-for="month in months" :value="month">{{ getMonthName(month) }}</option>
                     </select>
                 </label>
             </div>
         </form>
-        <p v-if="inflation !== null">Inflation: {{ inflation }}%</p>
+        <p v-if="inflation !== null">Inflation: {{ inflation.toFixed(2) }}%</p>
         <p v-else>Inflation: N/A</p>
-        <p v-if="buyingPower !== null">Today's Equivalent Amount (Constant Dollars): ${{ buyingPower.toLocaleString() }} ({{ getYearMonthLabel(endYear, endMonth) }})</p>
+        <p v-if="buyingPower !== null">Buying Power: ${{ buyingPower.toFixed(2) }}</p>
         <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">
             Inflation = ((CPI in {{ getYearMonthLabel(endYear, endMonth) }} - CPI in {{ getYearMonthLabel(startYear, startMonth) }}) / CPI in {{ getYearMonthLabel(startYear, startMonth) }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = {{ ((getCPI(endYear, endMonth) - getCPI(startYear, startMonth)) / getCPI(startYear, startMonth)) * 100 }}
         </p>
@@ -154,7 +120,7 @@
             <tbody>
                 <tr v-for="(row, index) in uniqueFilteredData" :key="index">
                     <td>{{ row.Year }}</td>
-                    <td>{{ row.Month }}</td>
+                    <td>{{ getMonthName(row.Month) }}</td>
                     <td>{{ row['Consumer Price Index TX'] }}</td>
                 </tr>
             </tbody>
@@ -204,11 +170,11 @@
                 }
             },
             watch: {
-                startYear: 'updateChartAndInflation',
-                startMonth: 'updateChartAndInflation',
-                endYear: 'updateChartAndInflation',
-                endMonth: 'updateChartAndInflation',
-                startAmount: 'updateBuyingPower'
+                startAmount: 'updateBuyingPower',
+                startYear: 'updateBuyingPower',
+                startMonth: 'updateBuyingPower',
+                endYear: 'updateBuyingPower',
+                endMonth: 'updateBuyingPower'
             },
             created() {
                 Papa.parse('Key_Economic_Indicators.csv', {
@@ -234,7 +200,7 @@
                 this.chart = new Chart(document.getElementById('chart'), {
                     type: 'line',
                     data: {
-                        labels: this.uniqueFilteredData.map(row => `${row.Year}-${row.Month}`),
+                        labels: this.uniqueFilteredData.map(row => this.getYearMonthLabel(row.Year, row.Month)),
                         datasets: [{
                             label: 'Consumer Price Index TX',
                             data: this.uniqueFilteredData.map(row => row['Consumer Price Index TX']),
@@ -281,7 +247,7 @@
                         this.inflation = null;
                     }
 
-                    this.chart.data.labels = this.uniqueFilteredData.map(row => `${row.Year}-${row.Month}`);
+                    this.chart.data.labels = this.uniqueFilteredData.map(row => this.getYearMonthLabel(row.Year, row.Month));
                     this.chart.data.datasets[0].data = this.uniqueFilteredData.map(row => row['Consumer Price Index TX']);
                     this.chart.update();
                 },
@@ -290,30 +256,27 @@
                     const cpi = row && row['Consumer Price Index TX'];
                     return cpi !== undefined && cpi !== "" ? parseFloat(cpi) : null;
                 },
-                updateFormula() {
-                    this.$forceUpdate();
-                    this.updateBuyingPower();
-                },
-                getMonthName(month) {
-                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                    return monthNames[parseInt(month) - 1];
-                },
-                getYearMonthLabel(year, month) {
-                    return `${this.getMonthName(month)} ${year}`;
-                },
                 updateBuyingPower() {
-                    if (this.startYear && this.startMonth && this.endYear && this.endMonth && this.startAmount) {
-                        const startCPI = this.getCPI(this.startYear, this.startMonth);
-                        const endCPI = this.getCPI(this.endYear, this.endMonth);
-                        if (startCPI !== null && endCPI !== null) {
-                            const inflationRate = (endCPI - startCPI) / startCPI;
-                            this.buyingPower = this.startAmount * (1 + inflationRate);
-                        } else {
-                            this.buyingPower = null;
-                        }
+                    const startCPI = this.getCPI(this.startYear, this.startMonth);
+                    const endCPI = this.getCPI(this.endYear, this.endMonth);
+
+                    if (startCPI !== null && endCPI !== null) {
+                        const inflationRate = (endCPI - startCPI) / startCPI;
+                        const buyingPower = this.startAmount * (1 + inflationRate);
+                        this.buyingPower = buyingPower.toFixed(2);
                     } else {
                         this.buyingPower = null;
                     }
+                },
+                getMonthName(month) {
+                    const monthNames = [
+                        'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
+                    ];
+                    return monthNames[month - 1];
+                },
+                getYearMonthLabel(year, month) {
+                    const monthName = this.getMonthName(month);
+                    return `${monthName} ${year}`;
                 }
             }
         });
