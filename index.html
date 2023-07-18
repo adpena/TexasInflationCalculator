@@ -123,9 +123,9 @@
         new Vue({
             el: '#app',
             data: {
-                startYear: 2019,
+                startYear: '2019',
                 startMonth: null,
-                endYear: null,
+                endYear: '2023',
                 endMonth: null,
                 inflation: null,
                 data: [],
@@ -171,10 +171,6 @@
                         });
                         this.years = [...years].sort((a, b) => a - b);
                         this.months = [...months].sort((a, b) => a - b);
-
-                        // Select the year 2023 by default
-                        this.endYear = '2023';
-                        this.startYear = '2023';
 
                         // Get the latest non-null month for CPI in 2023
                         const filteredData2023 = this.filteredData.filter(row => row.Year === '2023' && row['Consumer Price Index TX'] !== null && row['Consumer Price Index TX'] !== '');
