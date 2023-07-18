@@ -51,8 +51,13 @@
         }
         canvas {
             margin-top: 2em;
-            max-width: 600px;
+            width: 80%;
+            max-width: 650px;
             margin: 2em auto;
+        }
+        .formula {
+            font-family: 'Courier New', monospace;
+            margin-top: 1em;
         }
     </style>
 </head>
@@ -93,6 +98,7 @@
             </div>
         </form>
         <p>Inflation: {{ inflation }}%</p>
+        <p class="formula">Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100</p>
         <canvas id="chart"></canvas>
         <table>
             <thead>
@@ -103,7 +109,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="row in filteredData">
+                <tr v-for="row in sortedFilteredData">
                     <td>{{ row.Year }}</td>
                     <td>{{ row.Month }}</td>
                     <td>{{ row['Consumer Price Index TX'] }}</td>
@@ -116,9 +122,9 @@
             el: '#app',
             data: {
                 startYear: 2019,
-                startMonth: 1,
+                startMonth: null,
                 endYear: 2023,
-                endMonth: 1,
+                endMonth: null,
                 inflation: '',
                 data: [],
                 years: [],
@@ -133,6 +139,13 @@
                         const endDate = new Date(this.endYear, this.endMonth - 1);
                         const rowDate = new Date(year, month - 1);
                         return rowDate >= startDate && rowDate <= endDate;
+                    });
+                },
+                sortedFilteredData() {
+                    return this.filteredData.sort((a, b) => {
+                        const dateA = new Date(a.Year, a.Month - 1);
+                        const dateB = new Date(b.Year, b.Month - 1);
+                        return dateA - dateB;
                     });
                 }
             },
@@ -156,6 +169,11 @@
                         });
                         this.years = [...years].sort((a, b) => a - b);
                         this.months = [...months].sort((a, b) => a - b);
+
+                        let latestYearData = this.data.filter(row => row.Year == '2023');
+                        let latestMonthIn2023 = Math.max(...latestYearData.map(row => row.Month));
+                        this.startMonth = latestMonthIn2023;
+                        this.endMonth = latestMonthIn2023;
                         this.updateChartAndInflation();
                     }
                 });
@@ -164,10 +182,10 @@
                 this.chart = new Chart(document.getElementById('chart'), {
                     type: 'line',
                     data: {
-                        labels: this.filteredData.map(row => `${row.Year}-${row.Month}`),
+                        labels: this.sortedFilteredData.map(row => `${row.Year}-${row.Month}`),
                         datasets: [{
                             label: 'Consumer Price Index TX',
-                            data: this.filteredData.map(row => row['Consumer Price Index TX']),
+                            data: this.sortedFilteredData.map(row => row['Consumer Price Index TX']),
                             borderColor: '#007BFF',
                             fill: false
                         }]
@@ -203,8 +221,8 @@
                     const endCPI = this.getCPI(this.endYear, this.endMonth);
                     this.inflation = ((endCPI / startCPI) - 1) * 100;
 
-                    this.chart.data.labels = this.filteredData.map(row => `${row.Year}-${row.Month}`);
-                    this.chart.data.datasets[0].data = this.filteredData.map(row => row['Consumer Price Index TX']);
+                    this.chart.data.labels = this.sortedFilteredData.map(row => `${row.Year}-${row.Month}`);
+                    this.chart.data.datasets[0].data = this.sortedFilteredData.map(row => row['Consumer Price Index TX']);
                     this.chart.update();
                 },
                 getCPI(year, month) {
