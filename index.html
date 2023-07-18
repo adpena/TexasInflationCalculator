@@ -31,21 +31,22 @@
             display: grid;
             gap: 0.5em;
         }
-        input {
+        select {
             padding: 0.5em;
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-        button {
-            margin-top: 1em;
-            padding: 0.5em 1em;
-            background-color: #007BFF;
-            color: white;
-            border-radius: 5px;
-            border: none;
-            font-size: 1em;
-            cursor: pointer;
-            grid-column: span 2;
+        table {
+            margin-top: 2em;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
@@ -55,41 +56,66 @@
         <p>This calculator uses historical data to compute the inflation rate in Texas between two given periods. The data is sourced from the
             <a href="https://comptroller.texas.gov/" target="_blank">Texas Comptroller of Public Accounts</a>. For the most recent data, please visit their website.
         </p>
-        <form @submit.prevent="calculateInflation">
+        <form>
             <div class="form-group">
                 <label>
                     Start Year:
-                    <input type="number" v-model="startYear" min="2005" max="2023">
+                    <select v-model="startYear">
+                        <option v-for="year in years" :value="year">{{ year }}</option>
+                    </select>
                 </label>
                 <label>
                     Start Month:
-                    <input type="number" v-model="startMonth" min="1" max="12">
+                    <select v-model="startMonth">
+                        <option v-for="month in months" :value="month">{{ month }}</option>
+                    </select>
                 </label>
             </div>
             <div class="form-group">
                 <label>
                     End Year:
-                    <input type="number" v-model="endYear" min="2005" max="2023">
+                    <select v-model="endYear">
+                        <option v-for="year in years" :value="year">{{ year }}</option>
+                    </select>
                 </label>
                 <label>
                     End Month:
-                    <input type="number" v-model="endMonth" min="1" max="12">
+                    <select v-model="endMonth">
+                        <option v-for="month in months" :value="month">{{ month }}</option>
+                    </select>
                 </label>
             </div>
-            <button type="submit">Calculate</button>
         </form>
         <p>Inflation: {{ inflation }}%</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Consumer Price Index TX</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="row in data">
+                    <td>{{ row.Year }}</td>
+                    <td>{{ row.Month }}</td>
+                    <td>{{ row['Consumer Price Index TX'] }}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
     <script>
         new Vue({
             el: '#app',
             data: {
-                startYear: 2005,
+                startYear: 2019,
                 startMonth: 1,
                 endYear: 2023,
                 endMonth: 1,
                 inflation: '',
-                data: []
+                data: [],
+                years: [],
+                months: []
             },
             created() {
                 Papa.parse('Key_Economic_Indicators.csv', {
@@ -97,8 +123,23 @@
                     header: true,
                     complete: (results) => {
                         this.data = results.data;
+                        let years = new Set();
+                        let months = new Set();
+                        this.data.forEach(row => {
+                            years.add(row.Year);
+                            months.add(row.Month);
+                        });
+                        this.years = [...years].sort((a, b) => a - b);
+                        this.months = [...months].sort((a, b) => a - b);
+                        this.calculateInflation();
                     }
                 });
+            },
+            watch: {
+                startYear: 'calculateInflation',
+                startMonth: 'calculateInflation',
+                endYear: 'calculateInflation',
+                endMonth: 'calculateInflation'
             },
             methods: {
                 calculateInflation() {
