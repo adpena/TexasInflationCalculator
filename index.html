@@ -96,9 +96,16 @@
                     </select>
                 </label>
             </div>
+            <div class="form-group">
+                <label>
+                    Start Amount:
+                    <input type="number" v-model="startAmount" min="0" step="0.01" @input="updateBuyingPower">
+                </label>
+            </div>
         </form>
         <p v-if="inflation !== null">Inflation: {{ inflation }}%</p>
         <p v-else>Inflation: N/A</p>
+        <p v-if="buyingPower !== null">Buying Power: ${{ buyingPower.toFixed(2) }} in {{ getYearMonthLabel(startYear, startMonth) }} translates into ${{ startAmount }} in {{ getYearMonthLabel(endYear, endMonth) }}</p>
         <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">
             Inflation = ((CPI in {{ getYearMonthLabel(endYear, endMonth) }} - CPI in {{ getYearMonthLabel(startYear, startMonth) }}) / CPI in {{ getYearMonthLabel(startYear, startMonth) }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = {{ ((getCPI(endYear, endMonth) - getCPI(startYear, startMonth)) / getCPI(startYear, startMonth)) * 100 }}
         </p>
@@ -132,7 +139,9 @@
                 inflation: null,
                 data: [],
                 years: [],
-                months: []
+                months: [],
+                startAmount: 0,
+                buyingPower: null
             },
             computed: {
                 filteredData() {
@@ -249,6 +258,7 @@
                 },
                 updateFormula() {
                     this.$forceUpdate();
+                    this.updateBuyingPower();
                 },
                 getMonthName(month) {
                     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -256,6 +266,20 @@
                 },
                 getYearMonthLabel(year, month) {
                     return `${this.getMonthName(month)} ${year}`;
+                },
+                updateBuyingPower() {
+                    if (this.startYear && this.startMonth && this.endYear && this.endMonth && this.startAmount) {
+                        const startCPI = this.getCPI(this.startYear, this.startMonth);
+                        const endCPI = this.getCPI(this.endYear, this.endMonth);
+                        if (startCPI !== null && endCPI !== null) {
+                            const inflationRate = (endCPI - startCPI) / startCPI;
+                            this.buyingPower = this.startAmount * (1 + inflationRate);
+                        } else {
+                            this.buyingPower = null;
+                        }
+                    } else {
+                        this.buyingPower = null;
+                    }
                 }
             }
         });
