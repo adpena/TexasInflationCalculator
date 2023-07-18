@@ -97,8 +97,10 @@
                 </label>
             </div>
         </form>
-        <p>Inflation: {{ inflation }}%</p>
-        <p class="formula">Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100</p>
+        <p v-if="inflation !== null">Inflation: {{ inflation }}%</p>
+        <p v-else>Inflation: N/A</p>
+        <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100</p>
+        <p class="formula" v-else>Inflation calculation requires valid start and end dates.</p>
         <canvas id="chart"></canvas>
         <table>
             <thead>
@@ -125,7 +127,7 @@
                 startMonth: null,
                 endYear: null,
                 endMonth: null,
-                inflation: '',
+                inflation: null,
                 data: [],
                 years: [],
                 months: []
@@ -138,7 +140,7 @@
                         const startDate = new Date(this.startYear, this.startMonth - 1);
                         const endDate = new Date(this.endYear, this.endMonth - 1);
                         const rowDate = new Date(year, month - 1);
-                        return rowDate >= startDate && rowDate <= endDate;
+                        return rowDate >= startDate && rowDate <= endDate && row['Consumer Price Index TX'] !== null && row['Consumer Price Index TX'] !== "";
                     });
                 },
                 sortedFilteredData() {
@@ -160,7 +162,7 @@
                     download: true,
                     header: true,
                     complete: (results) => {
-                        this.data = results.data.filter(row => row['Consumer Price Index TX'] !== "" && row['Consumer Price Index TX'] !== null);
+                        this.data = results.data;
                         let years = new Set();
                         let months = new Set();
                         this.data.forEach(row => {
@@ -217,9 +219,17 @@
             },
             methods: {
                 updateChartAndInflation() {
-                    const startCPI = this.getCPI(this.startYear, this.startMonth);
-                    const endCPI = this.getCPI(this.endYear, this.endMonth);
-                    this.inflation = ((endCPI / startCPI) - 1) * 100;
+                    if (this.startYear && this.startMonth && this.endYear && this.endMonth) {
+                        const startCPI = this.getCPI(this.startYear, this.startMonth);
+                        const endCPI = this.getCPI(this.endYear, this.endMonth);
+                        if (startCPI !== null && endCPI !== null) {
+                            this.inflation = ((endCPI / startCPI) - 1) * 100;
+                        } else {
+                            this.inflation = null;
+                        }
+                    } else {
+                        this.inflation = null;
+                    }
 
                     this.chart.data.labels = this.sortedFilteredData.map(row => `${row.Year}-${row.Month}`);
                     this.chart.data.datasets[0].data = this.sortedFilteredData.map(row => row['Consumer Price Index TX']);
@@ -227,7 +237,8 @@
                 },
                 getCPI(year, month) {
                     const row = this.data.find(row => row.Year == year && row.Month == month);
-                    return parseFloat(row['Consumer Price Index TX']);
+                    const cpi = row && row['Consumer Price Index TX'];
+                    return cpi !== undefined && cpi !== "" ? parseFloat(cpi) : null;
                 }
             }
         });
