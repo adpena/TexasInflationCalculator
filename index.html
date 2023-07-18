@@ -71,13 +71,13 @@
             <div class="form-group">
                 <label>
                     Start Year:
-                    <select v-model="startYear">
+                    <select v-model="startYear" @change="updateFormula">
                         <option v-for="year in years" :value="year">{{ year }}</option>
                     </select>
                 </label>
                 <label>
                     Start Month:
-                    <select v-model="startMonth">
+                    <select v-model="startMonth" @change="updateFormula">
                         <option v-for="month in months" :value="month" :selected="month === '5'">{{ month }}</option>
                     </select>
                 </label>
@@ -85,13 +85,13 @@
             <div class="form-group">
                 <label>
                     End Year:
-                    <select v-model="endYear">
+                    <select v-model="endYear" @change="updateFormula">
                         <option v-for="year in years" :value="year">{{ year }}</option>
                     </select>
                 </label>
                 <label>
                     End Month:
-                    <select v-model="endMonth">
+                    <select v-model="endMonth" @change="updateFormula">
                         <option v-for="month in months" :value="month" :selected="month === '5'">{{ month }}</option>
                     </select>
                 </label>
@@ -100,7 +100,7 @@
         <p v-if="inflation !== null">Inflation: {{ inflation }}%</p>
         <p v-else>Inflation: N/A</p>
         <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">
-            Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100
+            Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = {{ ((getCPI(endYear, endMonth) - getCPI(startYear, startMonth)) / getCPI(startYear, startMonth)) * 100 }}
         </p>
         <p class="formula" v-else>Inflation calculation requires valid start and end dates.</p>
         <canvas id="chart"></canvas>
@@ -246,6 +246,9 @@
                     const row = this.data.find(row => row.Year === year && row.Month === month);
                     const cpi = row && row['Consumer Price Index TX'];
                     return cpi !== undefined && cpi !== "" ? parseFloat(cpi) : null;
+                },
+                updateFormula() {
+                    this.$forceUpdate();
                 }
             }
         });
