@@ -172,10 +172,18 @@
                         this.years = [...years].sort((a, b) => a - b);
                         this.months = [...months].sort((a, b) => a - b);
 
-                        let latestDataPoint = this.data[this.data.length - 1];
-                        this.endYear = latestDataPoint.Year;
-                        this.endMonth = latestDataPoint.Month;
-                        this.startMonth = latestDataPoint.Month;
+                        // Select the year 2023 by default
+                        this.endYear = '2023';
+                        this.startYear = '2023';
+
+                        // Get the latest non-null month for CPI in 2023
+                        const filteredData2023 = this.filteredData.filter(row => row.Year === '2023' && row['Consumer Price Index TX'] !== null && row['Consumer Price Index TX'] !== '');
+                        if (filteredData2023.length > 0) {
+                            const latestMonth = Math.max(...filteredData2023.map(row => parseInt(row.Month)));
+                            this.endMonth = latestMonth.toString();
+                            this.startMonth = latestMonth.toString();
+                        }
+
                         this.updateChartAndInflation();
                     }
                 });
@@ -236,7 +244,7 @@
                     this.chart.update();
                 },
                 getCPI(year, month) {
-                    const row = this.data.find(row => row.Year == year && row.Month == month);
+                    const row = this.data.find(row => row.Year === year && row.Month === month);
                     const cpi = row && row['Consumer Price Index TX'];
                     return cpi !== undefined && cpi !== "" ? parseFloat(cpi) : null;
                 }
