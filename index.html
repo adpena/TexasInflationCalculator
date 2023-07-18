@@ -78,7 +78,7 @@
                 <label>
                     Start Month:
                     <select v-model="startMonth">
-                        <option v-for="month in months" :value="month">{{ month }}</option>
+                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ month }}</option>
                     </select>
                 </label>
             </div>
@@ -92,14 +92,17 @@
                 <label>
                     End Month:
                     <select v-model="endMonth">
-                        <option v-for="month in months" :value="month">{{ month }}</option>
+                        <option v-for="month in months" :value="month" :selected="month === '5'">{{ month }}</option>
                     </select>
                 </label>
             </div>
         </form>
         <p v-if="inflation !== null">Inflation: {{ inflation }}%</p>
         <p v-else>Inflation: N/A</p>
-        <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100</p>
+        <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">
+            Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100<br>
+            Inflation = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100
+        </p>
         <p class="formula" v-else>Inflation calculation requires valid start and end dates.</p>
         <canvas id="chart"></canvas>
         <table>
@@ -124,9 +127,9 @@
             el: '#app',
             data: {
                 startYear: '2019',
-                startMonth: null,
+                startMonth: '5',
                 endYear: '2023',
-                endMonth: null,
+                endMonth: '5',
                 inflation: null,
                 data: [],
                 years: [],
@@ -171,17 +174,6 @@
                         });
                         this.years = [...years].sort((a, b) => a - b);
                         this.months = [...months].sort((a, b) => a - b);
-
-                        // Find the latest month in 2023
-                        let latestMonth = null;
-                        this.data.forEach(row => {
-                            if (row.Year === '2023' && row.Month !== '' && parseFloat(row.Month) > latestMonth) {
-                                latestMonth = parseFloat(row.Month);
-                            }
-                        });
-
-                        this.endMonth = latestMonth.toString();
-                        this.startMonth = latestMonth.toString();
 
                         this.updateChartAndInflation();
                     }
