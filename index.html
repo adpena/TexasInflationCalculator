@@ -100,7 +100,7 @@
         <p v-if="inflation !== null">Inflation: {{ inflation }}%</p>
         <p v-else>Inflation: N/A</p>
         <p class="formula" v-if="startYear && startMonth && endYear && endMonth && inflation !== null">
-            Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = {{ ((getCPI(endYear, endMonth) - getCPI(startYear, startMonth)) / getCPI(startYear, startMonth)) * 100 }}
+            Inflation = ((CPI in {{ endYear }} - CPI in {{ startYear }}) / CPI in {{ startYear }}) * 100 = (({{ getCPI(endYear, endMonth) }} - {{ getCPI(startYear, startMonth) }}) / {{ getCPI(startYear, startMonth) }}) * 100 = {{ ((getCPI(endYear, endMonth) - getCPI(startYear, startMonth)) / getCPI(startYear, startMonth)) * 100 }}
         </p>
         <p class="formula" v-else>Inflation calculation requires valid start and end dates.</p>
         <canvas id="chart"></canvas>
